@@ -1,0 +1,74 @@
+You, as (presumably) a human being, have Short Term Memory and Long Term Memory. When performing specific computation, your brain loads information you've previously learned into your short term memory, then acts on that information, then eventually puts new resulting information into your long-term memory. Societally, we also invented other, longer-term forms of storage: oral histories, journals, books, and wikipedia. If there's not enough space in your long-term memory for some information, or the information is not important to commit to long-term memory, you can always go and look it up on wikipedia, have your brain stick it into long-term memory, and pull it into your short-term memory when you need it later.
+
+This multi-level heirarchy of information access from "small but accessible" (your short term memory, which is right there when you need it but only stores 5 to 9 pieces of information to "large but slow" (remembering stuff from your massive long-term memory) to "massive but absolutely glacial" (looking stuff up on wikipedia) is actually the foundation of the Memory Hierarchy of modern computing. We've already learned about the "small but accessible" part of this in the previous module: those are registers, limited but FAST.
+
+More spacious than even all the registers put together, but much much MUCH slower to access, is computer memory, and this is what we'll dig into with this module, giving you a glimpse into another level of the memory hierarchy.
+
+
+
+1. Loading Data From Memory
+	a. To move a value into a register; 		mov  rdi, 31337
+	b. To move the value at a mem. address; 	mov rdi, [31137]; Here, 31337 is a memory address
+	In instance 'a', the value '31337 is moved to the `rdi` register;
+	In instance 'b', the data stored in the memory address '31337' is moved into the rdi register
+	
+	
+2. Dereferencing Pointers
+
+	Let's start with this memory configuration:
+
+  	Address │ Contents
+	+────────────────────+
+	│ 133700  │ 42       │
+	+────────────────────+
+
+	And consider this assembly snippet:
+
+	`mov rax, 133700`
+
+	Now, what you have is the following situation:
+	   Address │ Contents
+ 	 +────────────────────+
+	┌▸│ 133700  │ 42       │
+	│ +────────────────────+
+	│
+	└────────────────────────┐
+                         │
+	   Register │ Contents   │
+	  +────────────────────+ │
+	  │ rax     │ 133700   │─┘
+	  +────────────────────+
+	  
+	rax now holds a value that corresponds with the address of the data that want to load! Let's load it:
+
+	mov rdi, [rax]
+
+
+3. Dereferencing with Offsets
+	For example, if your pointer (say, rdi) points to a sequence of numbers in memory, as so:
+
+    	Address │ Contents
+  	+────────────────────+
+	┌▸│ 133700  │ 50       │
+	│ │ 133701  │ 42       │
+	│ │ 133702  │ 99       │
+	│ │ 133703  │ 14       │
+	│ +────────────────────+
+	│
+	└────────────────────────┐
+                         │
+	   Register │ Contents   │
+	  +────────────────────+ │
+	  │ rdi     │ 133700   │─┘
+	  +────────────────────+
+
+	If you want the second number of that sequence, you could do:
+
+	mov rax, [rdi+1]
+
+	In memory terms, we call these number slots bytes: each memory address represents a specific byte of memory. 
+	The above example is accessing memory 1 byte after the memory address pointed to by rax. In memory terms, 
+	we call this 1 byte difference an offset, so in this example, there is an offset of 1 from the address pointed to by rdi.
+	
+	
+
