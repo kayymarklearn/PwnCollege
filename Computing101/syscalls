@@ -1,0 +1,74 @@
+What are syscalls?
+It's an instruction that makes a call to the Operating System; In other words it instructs the OS to perform an action or series of actions.
+
+In Assembly Programming "syscall", triggers the system call specified by the value in rax.
+If the syscall triggered takes arguments, the arguments will be taken from these registers in the order;
+rdi, rsi, rdx, r10, r8, and r9.
+
+The syscall will then return a value to rax.
+
+
+Example; Using `read` syscall to read 100 bytes from stdin to the stack:
+
+C syntax:	n = read(0, buf, 100); 
+Assembly syntax:
+	mov rdi, 0 	# Arg 1: the file descriptor (stdin in this case)
+	mov rsi, rsp 	# Arg 2: read the data onto the stack (rsp is the pointer  to the start of stack)
+	mov rdx, 100	# Arg 2: the number of bytes to read
+	mov rax, 0	# system call number of read()
+	syscall		# do the system call
+	
+read returns the number of bytes read via rax, so we can easily write them out:
+
+C syntax:	write(1, buf, n);
+Assembly syntax:
+	mov rdi, 1	# Arg 1: the fd (stdout in this case)
+	mov rsi, rsp	# Arg 2: write the data from the stack
+	mov rdx, rax	# Arg 3: the number of bytes to write (same as was read)
+	mov rax, 1	# system call number of write()
+	syscall		# do the system call
+	
+	
+
+System calls have very well-defined interfaces that very rarely change.
+There are over 300 system calls in Linux. Here are some examples:
+int open(const char *pathname, int flags) - returns a file new file descriptor of the open file (also shows up in /proc/self/fd!)
+ssize_t read(int fd, void *buf, size_t count) - reads data from the file descriptor
+ssize_t write(int fd, void *buf, size_t count) - writes data to the file descriptor
+pid_t fork() - forks off an identical child process. Returns 0 if you're the child and the PID of the child if you're the parent.
+int execve(const char *filename, char **argv, char **envp) - replaces your process.
+pid_t wait(int *wstatus) - wait child termination, return its PID, write its status into *wstatus.
+
+
+
+
+"STRING" ARGUMENTS:
+	Some system calls take "string" arguments (for example, file paths).
+	A string is a bunch of contiguous bytes in memory, followed by a 0 byte.
+	
+
+	We can build a file path for the open() syscall on the stack as an example;
+	mov BYTE PTR [rsp+0], '/'	# Write the ASCII value of / onto the stack
+	mov BYTE PTR [rsp+1], 'f'
+	mov BYTE PTR [rsp+2], 'l'
+	mov BYTE PTR [rsp+3], 'a'
+	mov BYTE PTR [rsp+4], 'g'
+	mov BYTE PTR [rsp+5],  0	# Write the 0 byte that will terminate our string.
+	
+	Now, we can open() the /flag file!
+	mov rdi, rsp 	# read the data onto the stack
+	mov rsi, 0 	# open the file in read only  mode (more on this later)
+	mov rax, 2	# system call number for open()
+	syscall 	# do the system call
+	
+	open() returns the file descriptor number in `rax`
+	
+	
+'QUITTING' THE PROGRAM:
+ 	We can quit by calling the exit(),system call;
+ 	mov rdi, 42	# our program's return code (e.g., for bash scripts)
+ 	mov rax, 60	# system call number of exit()
+ 	syscall		# do the system call.
+ 	
+ 	
+ Have fun poking at your OS :-) :) :D
