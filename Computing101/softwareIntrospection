@@ -1,0 +1,23 @@
+Ways to Introspect, Debug and Understand software;
+
+1. Tracinng Syscalls: We use `strace` for this, `strace` will use functionality of the Linux operating system to introspect and record every system call that the program invokes, and its result.
+
+	Usage: strace ./your-program-binary
+	Eg;
+	hacker@dojo:~$ strace /tmp/your-program
+	execve("/tmp/your-program", ["/tmp/your-program"], 0x7ffd48ae28b0 /* 53 vars */) = 0
+	exit(42)                                 = ?
+	+++ exited with 42 +++
+	hacker@dojo:~$
+	
+2. Using GDB: GDB stands for the GNU Debugger, and it is typically used to hunt down and understand bugs. More specifically, a debugger is a tool that enables the close monitoring and introspection of another process. There are many famous debuggers, and in the Linux space, gdb is by far the most common.
+
+	Usage: gdb ./your-program-binary
+	Eg;
+	hacker@dojo:~$ gdb /path/to/binary/file
+	
+	GDB opens a prompt that allows you to interact with the program using commands,
+	(gdb) 
+	You start a program with `starti` command;
+	(gdb) starti
+	
