@@ -1,0 +1,126 @@
+Now that you have the hang of very basic assembly, let's dive in and explore a few different instructions and some additional concepts! The Assembly Crash Course is a romp through a lot of different things you can do in assembly.
+
+We will be using intel syntax for all our assembly code, so always use this prefix before your code;
+	.intel_syntax noprefix
+	.global _start
+	_start:
+	
+We will assemble our code with;
+	gcc -nostdlib -o prog prog.s
+	
+The program can be run with;
+	./prog
+after compilation.
+
+You can disassemble your program with;
+	objdump -M intel -d prog
+	
+Now to the challenges;
+
+1. Set-register;
+	Task: set the register, rdi to 0x1337
+	Solution:
+		`.intel_syntax noprefix
+
+		.global _start
+
+		_start:
+		mov rdi, 0x1337 `
+
+2. Set-multiple-registers:
+	Task: Set the registers to the following;
+		
+    		rax = 0x1337
+   		r12 = 0xCAFED00D1337BEEF
+    		rsp = 0x31337
+
+	Solution:
+		`.intel_syntax noprefix
+		.global _start
+
+		_start:
+		mov rax, 0x1337
+		mov r12, 0xCAFED00D1337BEEF
+		mov rsp, 0x31337 `
+		
+Let's learn some useful instructions before tackling the next challenges:
+	a. add reg1, reg2 <=> reg1 += reg2 <=> reg1 = reg1 + reg2	# add 2 registers
+	b. sub reg1, reg2 <=> reg1 -= reg2 <=> reg1 = reg1 - reg2	# sub 2 registers
+	c. imul reg1, reg2 <=> reg1 *= reg2 <=> reg1 = reg1 * reg2 	# mul 2 registers
+	NOTE: regX, can be replaced by a constant or a mem location, div is more complicated and will be discussed later.
+With this knowledge, we'll tackle the next challenges.
+
+3. add-to-registers
+	Task: Add 0x331337 to rdi
+	Solution:
+		` .intel_syntax noprefix
+		.global _start
+
+		_start:
+
+		add rdi, 0x331337`
+		
+4. linear-equation-registers
+	Task: Compute, f(x) = mx + b, where;
+		m = rdi, x = rsi, b = rdx
+	
+	Solution:
+		`.intel_syntax noprefix
+		.global _start
+
+		_start:
+		imul rdi, rsi
+		add rdi, rdx
+		mov rax, rdi `
+
+DIVISION in x86 is more special than in normal math. Math here is called integer math, meaning every value is a whole number.
+As an example: 10 / 3 = 3 in integer math.
+
+Why?
+
+Because 3.33 is rounded down to an integer.
+
+The relevant instructions for this level are:
+
+    mov rax, reg1
+    div reg2
+
+NOTE: div is a special instruction that can divide a 128-bit dividend by a 64-bit divisor while storing both the quotient and the remainder, using only one register as an operand.
+
+How does this complex div instruction work and operate on a 128-bit dividend (which is twice as large as a register)?
+
+For the instruction div reg, the following happens:
+
+    rax = rdx:rax / reg
+    rdx = remainder
+
+rdx:rax means that rdx will be the upper 64-bits of the 128-bit dividend and rax will be the lower 64-bits of the 128-bit dividend.
+
+You must be careful about what is in rdx and rax before you call div.
+
+5. integer-division:
+	Task:
+		Compute the following:
+
+    		speed = distance / time, where:
+        	distance = rdi
+        	time = rsi
+        	speed = rax
+        
+        Solution:
+        	`.intel_syntax noprefix
+		.global _start
+
+		_start:
+		mov rax, rdi		# mov numerator (distance) into rax
+		xor rdx, rdx		# clear rdx to prepare for division (upper 64 bits)
+		div rsi`		# unsigned divide rdx:rax by rsi
+		
+		REMEMBER: Quotient (speed here) is in rax, remainder is in rdx.
+        	
+
+		
+		
+
+		
+
