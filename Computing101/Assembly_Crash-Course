@@ -117,7 +117,52 @@ You must be careful about what is in rdx and rax before you call div.
 		div rsi`		# unsigned divide rdx:rax by rsi
 		
 		REMEMBER: Quotient (speed here) is in rax, remainder is in rdx.
-        	
+
+6. modulo operation:
+	Modulo is basically the remainder of a division operation.
+	So 10 % 3, will return 1 (where % is the modulo operator).
+	Note that the remainder of the div operation in x86 is stored in rdx.
+	
+	Task:
+		Compute the following: rdi % rsi
+		Place the value in rax.
+	
+	Solution:
+		`.intel_syntax noprefix
+		.global _start
+		
+		_start:
+			mov rax, rdi
+			xor rdx, rdx
+			div rsi
+			
+			mov rax, rdx`	# Placing the remainder (which is in rdx) into rax.
+			
+7. set-upper-byte:
+	Each register in x86_64 is 64 bits in size. 
+	We can also access the lower bytes of each register using different register names.
+	For example, the lower 32 bits of rax can be accessed using eax, the lower 16 bits using ax, and the lower 8 bits using al.
+
+	MSB                                    LSB
+	+----------------------------------------+
+	|                   rax                  |
+	+--------------------+-------------------+
+		             |        eax        |
+		             +---------+---------+
+		                       |   ax    |
+		                       +----+----+
+		                       | ah | al |
+		                       +----+----+
+
+	Task:
+		Using only one move instruction, please set the upper 8 bits of the ax register to 0x42.
+		
+	Solution:
+		`.intel_syntax noprefix
+		.global _start
+		
+		_start:
+			mov ax, 0x42
 
 		
 		
