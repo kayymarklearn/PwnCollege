@@ -162,10 +162,117 @@ You must be careful about what is in rdx and rax before you call div.
 		.global _start
 		
 		_start:
-			mov ax, 0x42
+			mov ah, 0x42 # ax is a 32bit reg that has ah as upper bit and al as lower bit
+			
+8. Efficient modulo:
+	We can use a math trick to optimize the modulo operator (%). Compilers use this trick a lot.
 
+	If we have x % y, and y is a power of 2, such as 2^n, the result will be the lower n bits of x.
+
+	Therefore, we can use the lower register byte access to efficiently implement modulo!
+	
+	Task:
+		Compute the following:
+
+		    rax = rdi % 256
+		    rbx = rsi % 65536
+		    
+	Solution:
+		`.intel_syntax noprefix
+		.global _start
+
+		mov rax, 0
+		mov al, dil	; rax = rdi % 256, 256 = 2^8, so we move lowest 8 bit of rdi (dil) to al (lowest 8 bit of rax)
+		
+		mov rbx, 0
+		mov bx, si	; rbx = rsi % 65536, 65536 = 2 ^16, so we move the lowest 16 bits.
+		`
+
+9. Byte-Extraction:
+	
+	IMPORTANT INFO:
+		Shifting bits around in assembly is another interesting concept!
+
+		x86 allows you to 'shift' bits around in a register.
+
+		Take, for instance, al, the lowest 8 bits of rax.
+
+		The value in al (in bits) is:
+
+		rax = 10001010
+
+		If we shift once to the left using the shl instruction:
+
+		shl al, 1
+
+		The new value is:
+
+		al = 00010100
+
+		Everything shifted to the left, and the highest bit fell off while a new 0 was added to the right side.
+
+		You can use this to do special things to the bits you care about.
+
+		Shifting has the nice side effect of doing quick multiplication (by 2) or division (by 2), and can also be used to compute modulo.	
 		
 		
+		Here are the important instructions:
+
+		    shl reg1, reg2 <=> Shift reg1 left by the amount in reg2
+		    shr reg1, reg2 <=> Shift reg1 right by the amount in reg2
+		    
+	Task:
+		Set rax to the 5th least significant byte of rdi.
+
+		For example:
+
+		rdi = | B7 | B6 | B5 | B4 | B3 | B2 | B1 | B0 |
+		Set rax to the value of B4
+		
+	Solution:
+		`.intel_syntax noprefix
+		.global _start
+		
+		_start:
+			shr rdi, 4
+			shr rdi, 7
+			mov rax, rdi
+		'
+
+Bitwise logic, performs comparisions between individual bits.
+Here are some truth tables for reference:
+
+    AND
+
+    A | B | X
+    ---+---+---
+    0 | 0 | 0
+    0 | 1 | 0
+    1 | 0 | 0
+    1 | 1 | 1
+
+    OR
+
+    A | B | X
+    ---+---+---
+    0 | 0 | 0
+    0 | 1 | 1
+    1 | 0 | 1
+    1 | 1 | 1
+
+    XOR
+
+    A | B | X
+    ---+---+---
+    0 | 0 | 0
+    0 | 1 | 1
+    1 | 0 | 1
+    1 | 1 | 0
+
+
+	
+
+
 
 		
 
