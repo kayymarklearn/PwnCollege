@@ -234,9 +234,11 @@ You must be careful about what is in rdx and rax before you call div.
 		.global _start
 		
 		_start:
-			shr rdi, 4
-			shr rdi, 7
 			mov rax, rdi
+			shr rax, 32
+			shl rax, 56
+			shr rax, 56
+			
 		'
 
 Bitwise logic, performs comparisions between individual bits.
@@ -270,9 +272,222 @@ Here are some truth tables for reference:
     1 | 1 | 0
 
 
+10. Bitwise-and
+	Task:
+		Without using the following instructions: mov, xchg, please perform the following:
+
+		Set rax to the value of (rdi AND rsi)
 	
+	Solution:
+		`..............
+		.............
+		
+		_start:
+			push rdi	; push rdi into the stack
+			pop rax		; pop the value of rdi onto rax
+			and rax, rsi
+			`
+			
+11. Check-even:
+	Task:	
+		Using only the following instructions:
+
+		    and
+		    or
+		    xor
+
+		Implement the following logic:
+
+		if x is even then
+		  y = 1
+		else
+		  y = 0
+
+		Where:
+		    x = rdi
+	   	    y = rax
+	   
+	Solution:
+		`...............
+		................
+		
+		_start:
+			and rdi, 1	; Extract the least significant bit of rdi
+			xor rdi, 1	; Flip the bit (0 becomes 1, 1 becomes 0)
+			and rdi, 1	; Ensure only the least significant bit remains
+			or rax, rdi	; set the result bit in rax
+			xor rax, rax	; clear rax to 0
+			or rax, rdi 	; put the result in rax
+		`
+
+12. Memory-read
+	Task:
+		Place the value stored at 0x404000 into rax. Make sure the value in rax is the original value stored at 0x404000.
+		
+	Solution:
+		`............
+		............
+		
+		_start:
+			mov rax, [ 0x404000]
+			
+		`
 
 
+13. Memory-write
+	Task:
+		Place the value stored in rax to 0x404000
+		
+	Solution:
+		`............
+		............
+		
+		_start:
+			mov [0x404000], rax
+		`
+		
+14. Memory-increment
+	Task:
+		Please perform the following:
+
+	    Place the value stored at 0x404000 into rax.
+	    Increment the value stored at the address 0x404000 by 0x1337.
+
+	Make sure the value in rax is the original value stored at 0x404000 and make sure that [0x404000] now has the incremented value.
+	
+	Solution:
+	`.intel_syntax noprefix
+
+	.global _start
+
+	_start:
+		mov rax, [0x404000]
+		add qword ptr [0x404000],0x1337`
+		
+15. Byte-access
+		Here is the breakdown of the names of memory sizes:
+
+	    Quad Word = 8 Bytes = 64 bits
+	    Double Word = 4 bytes = 32 bits
+	    Word = 2 bytes = 16 bits
+	    Byte = 1 byte = 8 bits
+
+	In x86_64, you can access each of these sizes when dereferencing an address, just like using bigger or smaller register accesses:
+
+	    mov al, [address] <=> moves the least significant byte from address to rax
+	    mov ax, [address] <=> moves the least significant word from address to rax
+	    mov eax, [address] <=> moves the least significant double word from address to rax
+	    mov rax, [address] <=> moves the full quad word from address to rax
+
+
+	Task:
+		Please perform the following: Set rax to the byte at 0x404000.
+		
+	Solution:
+		`...............
+		...............
+		
+		_start:
+			mov al, [0x404000]
+		`
+		
+16. Memory-size-access
+	Task:
+		 Perform the following:
+
+		    Set rax to the byte at 0x404000
+		    Set rbx to the word at 0x404000
+		    Set rcx to the double word at 0x404000
+		    Set rdx to the quad word at 0x404000
+	
+	Solution:
+		`...........
+		..............
+		
+		_start:
+			mov al, [0x404000]
+			mov bx, [0x404000]
+			mov ecx, [0x404000]
+			mov rdx, [0x404000]
+		`
+
+17. Litle-Endian-write
+	Task:
+		The first address will be placed in rdi. The second will be placed in rsi.
+
+		Using the earlier mentioned info, perform the following:
+
+		    Set [rdi] = 0xdeadbeef00001337
+		    Set [rsi] = 0xc0ffee0000
+
+	Solution:
+		`..........
+		............
+		
+		_start:
+			mov rax, 0xdeadbeef00001337
+			mov [rdi], rax
+			
+			mov rax, 0xc0ffee0000
+			mov [rsi], rax
+		`
+
+18. Memory-sum
+	Task:
+		Perform the following:
+
+		    Load two consecutive quad words from the address stored in rdi.
+		    Calculate the sum of the previous steps' quad words.
+		    Store the sum at the address in rsi.
+		    
+	Solution:
+		`.............
+		...............
+		
+		_start:
+			mov rax, [rdi]
+			mov rdx, [rdi + 8]
+			
+			add rax, rdx
+			
+			mov [rsi], rax
+		`
+
+19. Stack-substraction
+	Task:
+		Using these instructions, take the top value of the stack, subtract rdi from it, then put it back.
+		
+	Solution:
+		`..............
+		................
+		
+		_start:
+			pop rax
+			sub rax, rdi
+			push rax
+		`
+		
+20. swap-stack-values
+	Task:
+		Using only the following instructions:
+
+		    push
+		    pop
+
+		Swap values in rdi and rsi.
+	
+	Solution:
+		`..........
+		...........
+		
+		_start:
+			push rdi
+			push rsi
+			pop rdi
+			pop rsi
+		`
+
+21. Average-stack-values
 
 		
 
