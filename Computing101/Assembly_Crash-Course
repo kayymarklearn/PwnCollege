@@ -4,17 +4,17 @@ We will be using intel syntax for all our assembly code, so always use this pref
 	.intel_syntax noprefix
 	.global _start
 	_start:
-	
+
 We will assemble our code with;
 	gcc -nostdlib -o prog prog.s
-	
+
 The program can be run with;
 	./prog
 after compilation.
 
 You can disassemble your program with;
 	objdump -M intel -d prog
-	
+
 Now to the challenges;
 
 1. Set-register;
@@ -29,7 +29,7 @@ Now to the challenges;
 
 2. Set-multiple-registers:
 	Task: Set the registers to the following;
-		
+
     		rax = 0x1337
    		r12 = 0xCAFED00D1337BEEF
     		rsp = 0x31337
@@ -42,7 +42,7 @@ Now to the challenges;
 		mov rax, 0x1337
 		mov r12, 0xCAFED00D1337BEEF
 		mov rsp, 0x31337 `
-		
+
 Let's learn some useful instructions before tackling the next challenges:
 	a. add reg1, reg2 <=> reg1 += reg2 <=> reg1 = reg1 + reg2	# add 2 registers
 	b. sub reg1, reg2 <=> reg1 -= reg2 <=> reg1 = reg1 - reg2	# sub 2 registers
@@ -59,11 +59,11 @@ With this knowledge, we'll tackle the next challenges.
 		_start:
 
 		add rdi, 0x331337`
-		
+
 4. linear-equation-registers
 	Task: Compute, f(x) = mx + b, where;
 		m = rdi, x = rsi, b = rdx
-	
+
 	Solution:
 		`.intel_syntax noprefix
 		.global _start
@@ -106,7 +106,7 @@ You must be careful about what is in rdx and rax before you call div.
         	distance = rdi
         	time = rsi
         	speed = rax
-        
+
         Solution:
         	`.intel_syntax noprefix
 		.global _start
@@ -115,31 +115,31 @@ You must be careful about what is in rdx and rax before you call div.
 		mov rax, rdi		# mov numerator (distance) into rax
 		xor rdx, rdx		# clear rdx to prepare for division (upper 64 bits)
 		div rsi`		# unsigned divide rdx:rax by rsi
-		
+
 		REMEMBER: Quotient (speed here) is in rax, remainder is in rdx.
 
 6. modulo operation:
 	Modulo is basically the remainder of a division operation.
 	So 10 % 3, will return 1 (where % is the modulo operator).
 	Note that the remainder of the div operation in x86 is stored in rdx.
-	
+
 	Task:
 		Compute the following: rdi % rsi
 		Place the value in rax.
-	
+
 	Solution:
 		`.intel_syntax noprefix
 		.global _start
-		
+
 		_start:
 			mov rax, rdi
 			xor rdx, rdx
 			div rsi
-			
+
 			mov rax, rdx`	# Placing the remainder (which is in rdx) into rax.
-			
+
 7. set-upper-byte:
-	Each register in x86_64 is 64 bits in size. 
+	Each register in x86_64 is 64 bits in size.
 	We can also access the lower bytes of each register using different register names.
 	For example, the lower 32 bits of rax can be accessed using eax, the lower 16 bits using ax, and the lower 8 bits using al.
 
@@ -156,40 +156,40 @@ You must be careful about what is in rdx and rax before you call div.
 
 	Task:
 		Using only one move instruction, please set the upper 8 bits of the ax register to 0x42.
-		
+
 	Solution:
 		`.intel_syntax noprefix
 		.global _start
-		
+
 		_start:
 			mov ah, 0x42 # ax is a 32bit reg that has ah as upper bit and al as lower bit
-			
+
 8. Efficient modulo:
 	We can use a math trick to optimize the modulo operator (%). Compilers use this trick a lot.
 
 	If we have x % y, and y is a power of 2, such as 2^n, the result will be the lower n bits of x.
 
 	Therefore, we can use the lower register byte access to efficiently implement modulo!
-	
+
 	Task:
 		Compute the following:
 
 		    rax = rdi % 256
 		    rbx = rsi % 65536
-		    
+
 	Solution:
 		`.intel_syntax noprefix
 		.global _start
 
 		mov rax, 0
 		mov al, dil	; rax = rdi % 256, 256 = 2^8, so we move lowest 8 bit of rdi (dil) to al (lowest 8 bit of rax)
-		
+
 		mov rbx, 0
 		mov bx, si	; rbx = rsi % 65536, 65536 = 2 ^16, so we move the lowest 16 bits.
 		`
 
 9. Byte-Extraction:
-	
+
 	IMPORTANT INFO:
 		Shifting bits around in assembly is another interesting concept!
 
@@ -213,14 +213,14 @@ You must be careful about what is in rdx and rax before you call div.
 
 		You can use this to do special things to the bits you care about.
 
-		Shifting has the nice side effect of doing quick multiplication (by 2) or division (by 2), and can also be used to compute modulo.	
-		
-		
+		Shifting has the nice side effect of doing quick multiplication (by 2) or division (by 2), and can also be used to compute modulo.
+
+
 		Here are the important instructions:
 
 		    shl reg1, reg2 <=> Shift reg1 left by the amount in reg2
 		    shr reg1, reg2 <=> Shift reg1 right by the amount in reg2
-		    
+
 	Task:
 		Set rax to the 5th least significant byte of rdi.
 
@@ -228,17 +228,17 @@ You must be careful about what is in rdx and rax before you call div.
 
 		rdi = | B7 | B6 | B5 | B4 | B3 | B2 | B1 | B0 |
 		Set rax to the value of B4
-		
+
 	Solution:
 		`.intel_syntax noprefix
 		.global _start
-		
+
 		_start:
 			mov rax, rdi
 			shr rax, 32
 			shl rax, 56
 			shr rax, 56
-			
+
 		'
 
 Bitwise logic, performs comparisions between individual bits.
@@ -277,19 +277,19 @@ Here are some truth tables for reference:
 		Without using the following instructions: mov, xchg, please perform the following:
 
 		Set rax to the value of (rdi AND rsi)
-	
+
 	Solution:
 		`..............
 		.............
-		
+
 		_start:
 			push rdi	; push rdi into the stack
 			pop rax		; pop the value of rdi onto rax
 			and rax, rsi
 			`
-			
+
 11. Check-even:
-	Task:	
+	Task:
 		Using only the following instructions:
 
 		    and
@@ -306,11 +306,11 @@ Here are some truth tables for reference:
 		Where:
 		    x = rdi
 	   	    y = rax
-	   
+
 	Solution:
 		`...............
 		................
-		
+
 		_start:
 			and rdi, 1	; Extract the least significant bit of rdi
 			xor rdi, 1	; Flip the bit (0 becomes 1, 1 becomes 0)
@@ -323,29 +323,29 @@ Here are some truth tables for reference:
 12. Memory-read
 	Task:
 		Place the value stored at 0x404000 into rax. Make sure the value in rax is the original value stored at 0x404000.
-		
+
 	Solution:
 		`............
 		............
-		
+
 		_start:
 			mov rax, [ 0x404000]
-			
+
 		`
 
 
 13. Memory-write
 	Task:
 		Place the value stored in rax to 0x404000
-		
+
 	Solution:
 		`............
 		............
-		
+
 		_start:
 			mov [0x404000], rax
 		`
-		
+
 14. Memory-increment
 	Task:
 		Please perform the following:
@@ -354,7 +354,7 @@ Here are some truth tables for reference:
 	    Increment the value stored at the address 0x404000 by 0x1337.
 
 	Make sure the value in rax is the original value stored at 0x404000 and make sure that [0x404000] now has the incremented value.
-	
+
 	Solution:
 	`.intel_syntax noprefix
 
@@ -363,7 +363,7 @@ Here are some truth tables for reference:
 	_start:
 		mov rax, [0x404000]
 		add qword ptr [0x404000],0x1337`
-		
+
 15. Byte-access
 		Here is the breakdown of the names of memory sizes:
 
@@ -382,15 +382,15 @@ Here are some truth tables for reference:
 
 	Task:
 		Please perform the following: Set rax to the byte at 0x404000.
-		
+
 	Solution:
 		`...............
 		...............
-		
+
 		_start:
 			mov al, [0x404000]
 		`
-		
+
 16. Memory-size-access
 	Task:
 		 Perform the following:
@@ -399,11 +399,11 @@ Here are some truth tables for reference:
 		    Set rbx to the word at 0x404000
 		    Set rcx to the double word at 0x404000
 		    Set rdx to the quad word at 0x404000
-	
+
 	Solution:
 		`...........
 		..............
-		
+
 		_start:
 			mov al, [0x404000]
 			mov bx, [0x404000]
@@ -423,11 +423,11 @@ Here are some truth tables for reference:
 	Solution:
 		`..........
 		............
-		
+
 		_start:
 			mov rax, 0xdeadbeef00001337
 			mov [rdi], rax
-			
+
 			mov rax, 0xc0ffee0000
 			mov [rsi], rax
 		`
@@ -439,34 +439,34 @@ Here are some truth tables for reference:
 		    Load two consecutive quad words from the address stored in rdi.
 		    Calculate the sum of the previous steps' quad words.
 		    Store the sum at the address in rsi.
-		    
+
 	Solution:
 		`.............
 		...............
-		
+
 		_start:
 			mov rax, [rdi]
 			mov rdx, [rdi + 8]
-			
+
 			add rax, rdx
-			
+
 			mov [rsi], rax
 		`
 
 19. Stack-substraction
 	Task:
 		Using these instructions, take the top value of the stack, subtract rdi from it, then put it back.
-		
+
 	Solution:
 		`..............
 		................
-		
+
 		_start:
 			pop rax
 			sub rax, rdi
 			push rax
 		`
-		
+
 20. swap-stack-values
 	Task:
 		Using only the following instructions:
@@ -475,11 +475,11 @@ Here are some truth tables for reference:
 		    pop
 
 		Swap values in rdi and rsi.
-	
+
 	Solution:
 		`..........
 		...........
-		
+
 		_start:
 			push rdi
 			push rsi
@@ -497,22 +497,22 @@ Here are some truth tables for reference:
 	    RSP+0x?? Quad Word B
 	    RSP+0x?? Quad Word C
 	    RSP Quad Word D
-	    
+
 	  Solution:
 	  	`...........
 	  	.............
-	  	
+
 	  	_start:
 	  		mov rax, [rsp]
 	  		add rax, [rsp+0x8]
 	  		add rax, [rsp+0x10]
 	  		add rax, [rsp+0x18]
-	  		
+
 	  		shr rax, 2		; Divide by 4 (right shift by 2 is faster than division)
-	  		
+
 	  		push rax
 	  	`
-	  	
+
 CONTROL FLOW:
 	x86 gives us actual instructions to manipulate control flow directly.
 
@@ -536,19 +536,19 @@ CONTROL FLOW:
 	    Absolute jumps: jump to a specific address.
 	    Indirect jumps: jump to the memory address specified in a register.
 
-	  	
+
 22. Absolute-jump
 	Task:
 		Perform the following: Jump to the absolute address 0x403000
-		
+
 	Solution:
 		`.........
 		..............
-		
+
 		_start:
 			jmp 0x403000
 		`
-		
+
 23. Relative-jump
 	Task:
 		perform the following:
@@ -556,24 +556,253 @@ CONTROL FLOW:
 		    Make the first instruction in your code a jmp.
 		    Make that jmp a relative jump to 0x51 bytes from the current position.
 		    At the code location where the relative jump will redirect control flow, set rax to 0x1.
-		   
+
 	Solution:
 		`...........
 		.section .text
 		.global _start
-		
+
 		_start:
 			jmp skip
-			.rept 0x53 - 5
+			.rept 81
 				nop
 			.endr
-			
+
 		skip:
 			mov rax, 0x1
 		`
 		
+24. Jump-trampoline
+	Task:
+		Create a two jump trampoline:
+			Make the first instruction in your code a jmp.
+			Make that jmp a relative jump to 0x51 bytes from its current position.
+			At 0x51, write the following code:
+				Place the top value on the stack into rdi
+				jmp to the absolute address 0x403000
+				
+	Solution:
+		`.intel_syntax noprefix
+		.section .text
+		.global _start
+				
+		_start:
+			jmp _target
+			
+			.rept 81
+				nop
+			.endr
+			
+			_target:
+				pop rdi
+				mov rax, 0x403000
+				jmp rax
+		`
 
-	
+25. Conditional-jump
+	one of the most valuable instructions in x86. In higher-level programming languages, an if-else structure exists to do things like:
 
+if x is even:
+    is_even = 1
+else:
+    is_even = 0
+
+This should look familiar since it is implementable in only bit-logic, which you've done in a prior level. In these structures, we can control the program's control flow based on dynamic values provided to the program.
+
+Implementing the above logic with jmps can be done like so:
+
+; assume rdi = x, rax is output
+; rdx = rdi mod 2
+mov rax, rdi
+mov rsi, 2
+div rsi
+; remainder is 0 if even
+cmp rdx, 0
+; jump to not_even code if it's not 0
+jne not_even
+; fall through to even code
+mov rbx, 1
+jmp done
+; jump to this only when not_even
+not_even:
+mov rbx, 0
+done:
+mov rax, rbx
+; more instructions here
+
+Often though, you want more than just a single 'if-else'. Sometimes you want two if checks, followed by an else. To do this, you need to make sure that you have control flow that 'falls-through' to the next if after it fails. All must jump to the same done after execution to avoid the else.
+
+There are many jump types in x86, it will help to learn how they can be used. Nearly all of them rely on something called the ZF, the Zero Flag. The ZF is set to 1 when a cmp is equal, 0 otherwise.
+
+
+	Task:
+		implement the following:
+
+			if [x] is 0x7f454c46:
+			    y = [x+4] + [x+8] + [x+12]
+			else if [x] is 0x00005A4D:
+			    y = [x+4] - [x+8] - [x+12]
+			else:
+			    y = [x+4] * [x+8] * [x+12]
+
+		Where:
+
+		    x = rdi, y = rax.
+
+	Solution: 
+		`.intel_syntax noprefix
+		.global _start
+
+		_start:
+		    mov eax, [rdi]          # Load [x] into eax for comparison
+		    cmp eax, 0x7f454c46     # Compare with first magic number (ELF header)
+		    je first_case           # Jump if equal (ZF=1)
+
+		    cmp eax, 0x00005A4D     # Compare with second magic number (MZ header)
+		    je second_case          # Jump if equal (ZF=1)
+
+		    # Default case (multiplication)
+		    mov eax, [rdi+4]        # Load [x+4]
+		    imul eax, [rdi+8]       # Multiply by [x+8]
+		    imul eax, [rdi+12]      # Multiply by [x+12]
+		    jmp end                 # Skip other cases
+
+		first_case:                 # Addition case
+		    mov eax, [rdi+4]        # Load [x+4]
+		    add eax, [rdi+8]        # Add [x+8]
+		    add eax, [rdi+12]       # Add [x+12]
+		    jmp end                 # Skip other cases
+
+		second_case:                # Subtraction case
+		    mov eax, [rdi+4]        # Load [x+4]
+		    sub eax, [rdi+8]        # Subtract [x+8]
+		    sub eax, [rdi+12]       # Subtract [x+12]
+    		`
+
+27. Average-loop
+	Task:
+		compute the average of n consecutive quad words, where:
+
+		    rdi = memory address of the 1st quad word
+		    rsi = n (amount to loop for)
+		    rax = average computed
+
+	Solution:
+		.intel_syntax noprefix
+		.global _start
+
+		_start:
+			xor rax, rax
+			xor rcx, rcx
+
+		.loop:
+			mov rbx, [rdi + rcx * 8]
+			add rax, rbx
+			inc rcx
+
+			cmp rcx, rsi
+			jl .loop
+
+		mov rdx, rsi
+		xor rdx, rdx
+		div rsi
 		
+28. Count-none-zero
+	Task:
+		Count the consecutive non-zero bytes in a contiguous region of memory, where:
 
+		    rdi = memory address of the 1st byte
+		    rax = number of consecutive non-zero bytes
+
+		Additionally, if rdi = 0, then set rax = 0 (we will check)!
+	
+	Solution:
+		.intel_syntax noprefix
+		.global _start
+
+		_start:
+			cmp rdi, 0
+			je .end
+
+		xor rax, rax
+
+		.loop:
+			mov rbx, [rdi]
+			test rbx, rbx
+			jz .end
+
+			inc rax
+
+			inc rdi
+
+			jmp .loop
+
+		.end:
+29. string-lower
+	Task:
+		 implement the following logic:
+
+			str_lower(src_addr):
+			  i = 0
+			  if src_addr != 0:
+			    while [src_addr] != 0x00:
+			      if [src_addr] <= 0x5a:
+				[src_addr] = foo([src_addr])
+				i += 1
+			      src_addr += 1
+			  return i
+			  
+	Solution:
+		.intel_syntax noprefix
+		.global _start
+
+		_start:
+
+		str_lower:
+		mov r10, 0x0
+		cmp rdi, 0x0
+		je NotHere
+
+		loop:
+		mov rbx, rdi
+		mov rax, 0x403000
+		xor rdi, rdi
+		mov dil, byte ptr [rbx]
+		cmp dil, 0x0
+		je NotHere
+		cmp dil, 0x5a
+		jg GreaterThan
+		add r10, 0x1
+		call rax
+		mov byte ptr [rbx], al
+
+		GreaterThan:
+		mov rdi, rbx
+		add rdi, 0x1
+		jmp loop
+
+		NotHere:
+		mov rax, r10
+		ret
+		
+30. most-common-byte
+	Task:
+		 implement the following:
+
+			most_common_byte(src_addr, size):
+			  i = 0
+			  while i <= size-1:
+			    curr_byte = [src_addr + i]
+			    [stack_base - curr_byte * 2] += 1
+			    i += 1
+
+			  b = 1
+			  max_freq = 0
+			  max_freq_byte = 0
+			  while b <= 0x100:
+			    if [stack_base - b * 2] > max_freq:
+			      max_freq = [stack_base - b * 2]
+			      max_freq_byte = b
+			    b += 1
+
+			  return max_freq_byte
