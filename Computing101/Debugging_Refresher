@@ -1,0 +1,94 @@
+A critical part of working with computing is understanding what goes wrong when something inevitably does. This module will build on your prior exposure to GDB with some more debugging of programs: digging in, poking around, and gaining knowledge. This is one of the most critical skills that you will learn in your computing journey, and this module will hopefully help water the seed that we planted before.
+
+As you know, GDB is a very powerful dynamic analysis tool which you can use in order to understand the state of a program throughout its execution. You will become more familiar with some of its capabilities in this module.
+
+RESOURCES:
+	1. Robert's GDB Walkthrough: [https://www.youtube.com/watch?v=r185fCzdw8Y&list=PL-ymxv0nOtqqQzEncNuE6jetlJAiBUda-]
+	
+	2. Pwndbg : 		[https://github.com/pwndbg/pwndbg/]
+	
+	3. OpenSecurityTraining2: [https://apps.p.ost2.fyi/learning/course/course-v1:OpenSecurityTraining2+Dbg1012_IntroGDB+2024_v1/home]
+	
+
+CHALLENGES:
+
+1. Level 1
+	Task:
+		To get started with this level, and all the other levels of this module, run /challenge/embryogdb_levelXYZ, where XYZ is the level number. That program will launch gdb. Run the actual level logic with r, and follow 	
+		the prompts to get that flag!
+	
+	Solution:
+		a. run /challenge/embryogdb_level1
+		b. type r to start debugging the program
+		c. type continue to get flag
+		
+
+2. Level 2
+
+You can see the values for all your registers with info registers. Alternatively, you can also just print a particular register's value with the print command, or p for short. For example, p $rdi will print the value of $rdi in decimal. You can also print it's value in hex with p/x $rdi.
+
+
+	Task:
+		In order to solve this level, you must figure out the current random value of register r12 in hex.
+	
+	
+	Solution:
+		a. run /challenge/embryogdb_level2
+		b. type r to start debugging
+		c. use [info registers] command to get info on registers and their values
+		d. Use [p/x $r12] to get the random value in r12 register
+		e. type 'continue' to progress the program
+		f. enter the random value to get flag
+
+3. Level 3:
+	Task:
+		You can examine the contents of memory using the x/<n><u><f> <address> parameterized command. In this format <u> is the unit size to display, <f> is the format to display it in, and <n> is the number of elements to display. Valid unit sizes are b (1 byte), h (2 bytes), w (4 bytes), and g (8 bytes). Valid formats are d (decimal), x (hexadecimal), s (string) and i (instruction). The address can be specified using a register name, symbol name, or absolute address. Additionally, you can supply mathematical expressions when specifying the address.
+
+		For example, x/8i $rip will print the next 8 instructions from the current instruction pointer. x/16i main will print the first 16 instructions of main. You can also use disassemble main, or disas main for short, to print all of the instructions of main. Alternatively, x/16gx $rsp will print the first 16 values on the stack. x/gx $rbp-0x32 will print the local variable stored there on the stack.
+
+		You will probably want to view your instructions using the CORRECT assembly syntax. You can do that with the command set disassembly-flavor intel.
+
+		In order to solve this level, you must figure out the random value on the stack (the value read in from /dev/urandom). Think about what the arguments to the read system call are.
+		
+		
+	Solution:
+		1. run the program in gdb
+		2. use 'x/16gx $rsp' to examine the stack pointer register.
+		3. use c to continue the program, the random value will be set in stack
+		4. use 'x/16gx $rsp' to examine the stack pointer reg again, look for any value that has been changed in the registers, that's the random value.
+		
+4.  	.............
+
+5. ..............
+
+6. Use the following python script to get flag since this takes a long time to do it manually
+
+	Solution:
+			`from pwn import *
+			p = process("/challenge/embryogdb_level6")
+			p.recvuntil(b"(gdb) ")
+			p.sendline(b"run")
+			p.recvuntil(b"(gdb) ")
+			p.sendline(b"b *main+589")
+			p.recvuntil(b"(gdb) ")
+			p.sendline(b"c")
+			for i in range(64):
+				p.recvuntil(b"(gdb) ")
+				p.sendline(b"x/gx $rsp+0x28")
+				rsp_val = p.recvline()
+				rand_val = rsp_val.strip().split(b':')[1].strip()
+				p.sendline(b"c")
+				p.recvuntil(b"Random value: ")
+				p.sendline(rand_val)
+			p.interactive()
+			`
+			
+			Save and run to get flag
+			
+7. Run:
+	(gdb) call(void)win()
+	To get flag
+	
+8. set $rip to win+35 and continue execution to get flag
+		
+	
