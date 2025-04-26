@@ -1,0 +1,433 @@
+In this module, we will develop the skills needed to build a web server from scratch, starting with a simple program and progressing to handling multiple HTTP GET and POST requests.
+
+SETUP:
+	.intel_syntax noprefix
+	.section .data
+		.global _start
+	.section .text
+	_start:
+		
+		
+1. Exit:
+	`**SETUP**
+		# EXIT syscall has number of 60
+		mov rax, 60	# put the syscall descriptor in rax
+		mov rdi, 0	# This takes the exit code as a parameter, 0 means success
+		syscall		# asking the kernel to run the syscall
+		
+2. SOCKET:
+	`**SETUP**
+		# Socket is the endpoint for the server to communicate with devices and servcies that will connect to it
+		# We use the Socket syscall (41) to create a socket. The socket syscall takes three key arguments
+		# The domain (for example, AF_INET for IPv4), 
+		# the type (such as SOCK_STREAM for TCP),
+		# and the protocol (usually set to 0 to choose the default)
+		
+	THIS IS OUR CODE AFTER CREATING A SOCKET
+		< .intel_syntax noprefix
+
+		.section .data
+			.global _start
+
+			#socket details
+			.equ    AF_INET, 2              # IPv4
+			.equ    SOCK_STREAM, 1          # TCP
+			.equ    INADDR_ANY, 0           # Any Address
+			
+			
+		.section .text
+		_start:
+
+			# Creating a socket
+			# socket(int domain, int type, int protocol)
+			mov rax, 41             # socket syscall number for x86_64
+			mov rdi, AF_INET        # domain = AF_INET (IPv4)
+			mov rsi, SOCK_STREAM    # type = SOCK_STREAM (TCP)
+			mov rdx, INADDR_ANY     # Protocol = INADDR_ANY (default)
+			syscall
+
+			# Simply exit the program
+			mov rax, 60
+			mov rdi, 0
+			yscall >
+3. BIND:
+	After creating a socket, the next step is to assign it a network identity. In this challenge, you will use the bind syscall to connect your socket to a specific IP address and port number. The call requires you to provide the socket file descriptor, a pointer to a struct sockaddr (specifically a struct sockaddr_in for IPv4 that holds fields like the address family, port, and IP address), and the size of that structure. Binding is essential because it ensures your server listens on a known address, making it reachable by clients.
+	
+	THIS IS OUR CODE AFTER ASSIGNING A NETWORK IDENTITY:
+		< .intel_syntax noprefix
+
+		.section .data
+			.global _start
+
+			#socket details
+			.equ    AF_INET, 2              # IPv4
+			.equ    SOCK_STREAM, 1          # TCP
+
+			
+			sock_addr:
+				.word 0x0002			# sin_family (AF_INET)
+				.word 0x5000			# sin_port (Port 80 in network byte order (bg en))
+				.long	0			# sin_addr (INADDR_ANY (0.0.0.0))
+				.zero 8				# sin_zero padding
+		.section .text
+		_start:
+
+			# Creating a socket
+			# socket(int domain, int type, int protocol)
+			mov rax, 41             # socket syscall number for x86_64
+			mov rdi, AF_INET        # domain = AF_INET (IPv4)
+			mov rsi, SOCK_STREAM    # type = SOCK_STREAM (TCP)
+			mov rdx, 0		# Protocol = (default)
+			syscall
+			
+			# Error check
+			cmp rax, 0
+			jl error_exit
+			
+			# Save socket file descriptor
+			mov rdi, r12		# store socket descriptor in r12 for use in Bind(), listen()
+			
+			
+			# Calling Bind()
+			# int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
+			mov rax, 49		# bind syscall number
+			mov rdi, r12		# r12 already contains socket descriptor
+			lea rsi, [sock_addr]	# pointer to sock_addr structure
+			mov rdx, 16		# size of sock_addr structure
+			
+			cmp rax, 0
+			jl error_exit
+			
+			
+			# exit cleanly
+			mov rax, 60
+			mov rdi, 0
+			syscall
+			
+		error_exit:
+			# Simply exit the program
+			mov rax, 60
+			mov rdi, 1
+			syscall
+		
+		
+4. LISTEN:
+	With your socket bound to an address, you now need to prepare it to accept incoming connections. The listen syscall transforms your socket into a passive one that awaits client connection requests. It requires the socket’s file descriptor and a backlog parameter, which sets the maximum number of queued connections. This step is vital because without marking the socket as listening, your server wouldn’t be able to receive any connection attempts.
+	
+	THIS IS OUR CODE AFTER IMPLEMENTING LISTEN:
+		< .intel_syntax noprefix
+
+		.section .data
+			.global _start
+
+			#socket details
+			.equ    AF_INET, 2              # IPv4
+			.equ    SOCK_STREAM, 1          # TCP
+
+			
+			sock_addr:
+				.word 0x0002			# sin_family (AF_INET)
+				.word 0x5000			# sin_port (Port 80 in network byte order (bg en))
+				.long	0			# sin_addr (INADDR_ANY (0.0.0.0))
+				.zero 8				# sin_zero padding
+		.section .text
+		_start:
+
+			# Creating a socket
+			# socket(int domain, int type, int protocol)
+			mov rax, 41             # socket syscall number for x86_64
+			mov rdi, AF_INET        # domain = AF_INET (IPv4)
+			mov rsi, SOCK_STREAM    # type = SOCK_STREAM (TCP)
+			mov rdx, 0		# Protocol = (default)
+			syscall
+			
+			# Error check
+			cmp rax, 0
+			jl error_exit
+			
+			# Save socket file descriptor
+			mov r12, rax		# store socket descriptor in r12 for use in other calls
+			
+			
+			# Calling Bind()
+			# int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
+			mov rax, 49		# bind syscall number
+			mov rdi, r12		# r12 already contains socket descriptor
+			lea rsi, [sock_addr]	# pointer to sock_addr structure
+			mov rdx, 16		# size of sock_addr structure
+			
+			# Error check
+			cmp rax, 0
+			jl error_exit
+			
+			# calling listen()
+			# int listen(int sockfd, int backlog)
+			mov rax, 50		# listen syscall number
+			mov rdi, r12		# r12 already contains socket descriptor
+			mov rsi, 0		# Using 0 as a placeholder
+			syscall
+			
+			# Error check
+			cmp rax, 0
+			jl error_exit
+			
+			
+			# exit cleanly
+			mov rax, 60
+			mov rdi, 0
+			syscall
+			
+		error_exit:
+			# Simply exit the program
+			mov rax, 60
+			mov rdi, 1
+			syscall >
+
+
+5. ACCEPT:
+	Once your socket is listening, it’s time to actively accept incoming connections. In this challenge, you will use the accept syscall, which waits for a client to connect. When a connection is established, it returns a new socket file descriptor dedicated to communication with that client and fills in a provided address structure (such as a struct sockaddr_in) with the client’s details. This process is a critical step in transforming your server from a passive listener into an active communicator.
+	
+	AFTER IMPLEMENTING ACCEPT(), WE HAVE:
+		
+		< .intel_syntax noprefix
+
+		.section .data
+			.global _start
+
+			#socket details
+			.equ    AF_INET, 2              # IPv4
+			.equ    SOCK_STREAM, 1          # TCP
+
+			
+			sock_addr:
+				.word 0x0002			# sin_family (AF_INET)
+				.word 0x5000			# sin_port (Port 80 in network byte order (bg en))
+				.long	0			# sin_addr (INADDR_ANY (0.0.0.0))
+				.zero 8				# sin_zero padding
+		.section .bss
+			client_addr:
+				.zero 16			# space for sock_addr in structure
+			client_addr_len:
+				.quad 16			# length of address structure
+				
+		.section .text
+		_start:
+
+			# Creating a socket
+			# socket(int domain, int type, int protocol)
+			mov rax, 41             # socket syscall number for x86_64
+			mov rdi, AF_INET        # domain = AF_INET (IPv4)
+			mov rsi, SOCK_STREAM    # type = SOCK_STREAM (TCP)
+			mov rdx, 0		# Protocol = (default)
+			syscall
+			
+			# Error check
+			cmp rax, 0
+			jl error_exit
+			
+			# Save socket file descriptor
+			mov r12, rax		# store socket descriptor in r12 for use in other calls
+			
+			
+			# Calling Bind()
+			# int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
+			mov rax, 49		# bind syscall number
+			mov rdi, r12		# r12 already contains socket descriptor
+			lea rsi, [sock_addr]	# pointer to sock_addr structure
+			mov rdx, 16		# size of sock_addr structure
+			
+			# Error check
+			cmp rax, 0
+			jl error_exit
+			
+			# calling listen()
+			# int listen(int sockfd, int backlog)
+			mov rax, 50		# listen syscall number
+			mov rdi, r12		# r12 already contains socket descriptor
+			mov rsi, 0		# Using 0 as a placeholder
+			syscall
+			
+			# Error check
+			cmp rax, 0
+			jl error_exit
+			
+			# calling accept()
+			# int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
+			mov rax, 43			# syscall number for accept
+			mov rdi, r12			# socket descriptor
+			mov rsi, 0	#lea rsi, [client_addr]		# pointer to client address structure
+			mov rdx, 0 #	lea rdx, [client_addr_len]	# pointer to address length
+			sycall
+			
+			# Error check
+			cmp rax, 0
+			jl error_exit
+			
+			# save client socket descriptor
+			mov r13, rax			# store client socket descriptor in r13
+			
+			
+			# calling close()
+			# int close(int sockfd)
+			# Close client socket when done
+			mov rax, 3		# close syscall number
+			mov rdi, r13		# client socket descriptor
+			syscall
+			
+			# Error check
+			cmp rax, 0
+			jl error_exit
+			
+			# exit cleanly
+			mov rax, 60
+			mov rdi, 0
+			syscall
+			
+		error_exit:
+			# Simply exit the program
+			mov rax, 60
+			mov rdi, 1
+			syscall >
+
+
+6. STATIC RESPONSE:
+	Now that your server can establish connections, it’s time to learn how to send data. In this challenge, your goal is to send a fixed HTTP response (HTTP/1.0 200 OK\r\n\r\n) to any client that connects. You will use the write syscall, which requires a file descriptor, a pointer to a data buffer, and the number of bytes to write. This exercise is important because it teaches you how to format and deliver data over the network.
+	
+	BUILDING STATIC RESPONSE FUNCTIONALITY:
+			
+		< .intel_syntax noprefix
+
+		.section .data
+			.global _start
+
+			#socket details
+			.equ    AF_INET, 2              # IPv4
+			.equ    SOCK_STREAM, 1          # TCP
+
+			
+			sock_addr:
+				.word 0x0002			# sin_family (AF_INET)
+				.word 0x5000			# sin_port (Port 80 in network byte order (bg en))
+				.long	0			# sin_addr (INADDR_ANY (0.0.0.0))
+				.zero 8				# sin_zero padding
+		
+			client_addr:
+				.zero 16			# space for sock_addr in structure
+			client_addr_len:
+				.quad 16			# length of address structure
+				
+			# HTTP response data
+			http_resp:
+				.ascii "HTTP/1.0 200 OK\r\n\r\n"
+			http_resp_len = . - http_resp
+			
+		.section .bss
+			# Buffer for reading client request
+			read_buffer:
+				.zero 1024		# 1kb buffer for reading client data
+				
+		.section .text
+		_start:
+
+			# Creating a socket
+			# socket(int domain, int type, int protocol)
+			mov rax, 41             # socket syscall number for x86_64
+			mov rdi, AF_INET        # domain = AF_INET (IPv4)
+			mov rsi, SOCK_STREAM    # type = SOCK_STREAM (TCP)
+			mov rdx, 0		# Protocol = (default)
+			syscall
+			
+			# Error check
+			cmp rax, 0
+			jl error_exit
+			
+			# Save socket file descriptor
+			mov r12, rax		# store socket descriptor in r12 for use in other calls
+			
+			
+			# Calling Bind()
+			# int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
+			mov rax, 49		# bind syscall number
+			mov rdi, r12		# r12 already contains socket descriptor
+			lea rsi, [sock_addr]	# pointer to sock_addr structure
+			mov rdx, 16		# size of sock_addr structure
+			
+			# Error check
+			cmp rax, 0
+			jl error_exit
+			
+			# calling listen()
+			# int listen(int sockfd, int backlog)
+			mov rax, 50		# listen syscall number
+			mov rdi, r12		# r12 already contains socket descriptor
+			mov rsi, 0		# Using 0 as a placeholder
+			syscall
+			
+			# Error check
+			cmp rax, 0
+			jl error_exit
+			
+			# calling accept()
+			# int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
+			mov rax, 43			# syscall number for accept
+			mov rdi, r12			# socket descriptor
+			mov rsi, 0	#lea rsi, [client_addr]		# pointer to client address structure
+			mov rdx, 0 #	lea rdx, [client_addr_len]	# pointer to address length
+			sycall
+			
+			# Error check
+			cmp rax, 0
+			jl error_exit
+			
+			# save client socket descriptor
+			mov r13, rax			# store client socket descriptor in r13
+			
+			# Read client request
+			# ssize_t read(int fd, void *buf, size_t count);
+			mov rax, 0		# syscall for read
+			mov rdi, r13		# client socked fd
+			lea rsi, [read_buffer]	# buffer to store read data
+			mov rdx, 1024		# read upto 1024 bytes (1kb)
+			syscall
+			
+			# Error check [do not exit if no data, as this is normal]
+			cmp rax, 0
+			jl error_exit
+			
+			# Write HTTP response to client
+			# ssize_t write(int fd, const void *buf, size_t count)
+			
+			mov rax, 1			# syscall number for write
+			mov rdi, r13			# client socked fd
+			lea rsi, [http_resp]		# pointer to HTTP response data
+			mov rdx, http_resp_len		# length of HTTP response data
+			syscall
+			
+			# Error check
+			cmp rax, 0
+			jl error_exit
+			
+			
+			# calling close()
+			# int close(int sockfd)
+			# Close client socket when done
+			mov rax, 3		# close syscall number
+			mov rdi, r13		# client socket descriptor
+			syscall
+			
+			# Error check
+			cmp rax, 0
+			jl error_exit
+			
+			# exit cleanly
+			mov rax, 60
+			mov rdi, 0
+			syscall
+			
+		error_exit:
+			# Simply exit the program
+			mov rax, 60
+			mov rdi, 1
+			syscall >
+		
+
